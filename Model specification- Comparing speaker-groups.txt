@@ -1,0 +1,97 @@
+model{
+
+###########################
+# [1] Likelihood function #
+###########################
+
+for(EachRow in 1:nRows){
+FormantCoordinates[EachRow,1:2] ~ dmnorm(Mean[EachRow,], InverseCovarianceMatrix[( 1+2*(TargetVector_Integer[EachRow]-1) ):( 2+2*(TargetVector_Integer[EachRow]-1) ),1:2])
+} # End 'each row' loop
+
+##############################################################
+# [2] Covariance matrix (correlation and standard deviation) #
+##############################################################
+
+for(EachTarget in 1:nTargets){
+InverseCovarianceMatrix[( 1+2*(EachTarget-1) ):( 2+2*(EachTarget-1) ),1:2] <- inverse(CovarianceMatrix[( 1+2*(EachTarget-1) ):( 2+2*(EachTarget-1) ),1:2])
+
+CovarianceMatrix[( 2+2*(EachTarget-1) ),1] <- Correlation[EachTarget] * StandardDeviationF1[EachTarget] * StandardDeviationF2[EachTarget]
+CovarianceMatrix[( 1+2*(EachTarget-1) ),2] <- Correlation[EachTarget] * StandardDeviationF1[EachTarget] * StandardDeviationF2[EachTarget]
+
+StandardDeviationF1[EachTarget] <- 1/sqrt(PrecisionF1[EachTarget])
+StandardDeviationF2[EachTarget] <- 1/sqrt(PrecisionF2[EachTarget])
+
+CovarianceMatrix[( 1+2*(EachTarget-1) ),1] <- 1/PrecisionF1[EachTarget]
+CovarianceMatrix[( 2+2*(EachTarget-1) ),2] <- 1/PrecisionF2[EachTarget]
+
+Correlation[EachTarget] ~ dunif(-1,1)
+PrecisionF1[EachTarget] ~ dgamma(0.001, 0.001)
+PrecisionF2[EachTarget] ~ dgamma(0.001, 0.001)
+
+} # End 'each target' loop
+
+############################
+# [3] Decomposing the mean #
+############################
+
+for( EachRow in 1:nRows ) {
+Mean[EachRow,1] <- F1Center_Individual[SpeakerVector_Integer[EachRow]] + F1Expansion_Individual[SpeakerVector_Integer[EachRow]] * (F1Quality_Individual[SpeakerVector_Integer[EachRow],TargetVector_Integer[EachRow]])
+
+Mean[EachRow,2] <- F2Center_Individual[SpeakerVector_Integer[EachRow]] + F2Expansion_Individual[SpeakerVector_Integer[EachRow]] * (F2Quality_Individual[SpeakerVector_Integer[EachRow],TargetVector_Integer[EachRow]])
+} # End 'each row' loop
+
+####################################################################################################################
+# [4] Center (mean) and expansion factor (standard deviation) for each individual speaker's vowel space as a whole #
+####################################################################################################################
+
+for ( EachSpeaker in 1:nSpeakers ) {
+F1Center_Individual[EachSpeaker] ~ dnorm(F1Center_GroupMean,F1Center_GroupPrecision)
+F2Center_Individual[EachSpeaker] ~ dnorm(F2Center_GroupMean,F2Center_GroupPrecision)
+F1Expansion_Individual[EachSpeaker] ~ dnorm(F1Expansion_GroupMean,F1Expansion_GroupPrecision)
+F2Expansion_Individual[EachSpeaker] ~ dnorm(F2Expansion_GroupMean,F2Expansion_GroupPrecision)
+} # End 'each speaker' loop
+
+###################################################################################
+# [5] Mean and precision of vowel-space centers across all speakers in the sample #
+###################################################################################
+
+F1Center_GroupMean ~ dnorm(0, 0.01)
+F2Center_GroupMean ~ dnorm(0, 0.01)
+F1Center_GroupPrecision ~ dgamma(0.01, 0.1)
+F2Center_GroupPrecision ~ dgamma(0.01, 0.1)
+# used to be 0.001 for both...
+
+#############################################################################################
+# [6] Mean and precision of vowel-space expansion factors across all speakers in the sample #
+#############################################################################################
+
+F1Expansion_GroupMean ~ dgamma(1,1)
+F2Expansion_GroupMean ~ dgamma(1,1)
+F1Expansion_GroupPrecision ~ dgamma(0.01,0.1)
+F2Expansion_GroupPrecision ~ dgamma(0.01,0.1)
+
+############################################
+# [7] Individual speaker's vowel qualities #
+############################################
+
+for ( EachSpeaker in 1:nSpeakers ) {
+for ( EachTarget in 1:nTargets  ) {
+F1Quality_Individual[EachSpeaker,EachTarget] ~ dnorm(F1Quality_GroupMean[GroupVector_Integer[EachSpeaker],EachTarget],F1Quality_GroupPrecision[GroupVector_Integer[EachSpeaker],EachTarget])
+F2Quality_Individual[EachSpeaker,EachTarget] ~ dnorm(F2Quality_GroupMean[GroupVector_Integer[EachSpeaker],EachTarget],F2Quality_GroupPrecision[GroupVector_Integer[EachSpeaker],EachTarget])
+} # End 'each target' loop
+} # End 'each speaker' loop
+
+###############################################################################
+# [8] Mean and precision of vowel qualities for each speaker-group as a whole #
+###############################################################################
+
+for ( EachGroup in 1:nGroups ) {
+for ( EachTarget in 1:nTargets) {
+F1Quality_GroupMean[EachGroup,EachTarget] ~ dnorm(0, 0.01)
+F2Quality_GroupMean[EachGroup,EachTarget] ~ dnorm(0, 0.01)
+F1Quality_GroupPrecision[EachGroup,EachTarget] ~ dgamma(0.01, 0.1)
+F2Quality_GroupPrecision[EachGroup,EachTarget] ~ dgamma(0.01, 0.1)
+} # End 'each target' loop
+} # End 'each group' loop
+
+} # End model string
