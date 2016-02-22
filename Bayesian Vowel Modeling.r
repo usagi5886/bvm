@@ -37,7 +37,7 @@
 # If one or both are not installed, issue an error message as appropriate
  if(!tcltkInstalled & rjagsInstalled){stop("This script requires the package 'tcltk' to be installed.\nPlease see the following website for installation instructions:\nhttp://mypage.iu.edu/~wrankine/bvm/")}
  if( tcltkInstalled & !rjagsInstalled){stop("This script requires the package 'rjags' to be installed.\nPlease see the following website for installation instructions:\nhttp://mypage.iu.edu/~wrankine/bvm/")}
- if(!tcltkInstalled & !rjagsInstalled){stop("This script requires the packages 'rjags' and 'tcltk' to be installed.\nPlease see the following website for installation instructions:\nhttp://mypage.iu.edu/~wrankine/bvm/)}
+ if(!tcltkInstalled & !rjagsInstalled){stop("This script requires the packages 'rjags' and 'tcltk' to be installed.\nPlease see the following website for installation instructions:\nhttp://mypage.iu.edu/~wrankine/bvm/")}
  
 # Only run the rest of the code if both packages are installed
  if(tcltkInstalled & rjagsInstalled){
